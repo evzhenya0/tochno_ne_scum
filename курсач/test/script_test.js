@@ -1,29 +1,33 @@
-// Массив вопросов будет загружаться из файла
 let questions = [];
-
-// Переменная для текущего вопроса
 let currentQuestion = 0;
-
-// Переменная для подсчета правильных ответов
 let score = 0;
 
-// Функция для отображения вопроса
-function showQuestion() {
-    // Если массив вопросов пуст, выводим сообщение
-    if (!questions.length) {
-        document.getElementById("question").textContent = "Вопросы еще не загружены.";
-        return;
+async function loadQuestions() {
+    try {
+        const response = await fetch('questions.json');
+        questions = await response.json();
+        showQuestion();
+    } catch (error) {
+        console.error("Ошибка загрузки вопросов:", error);
+        document.getElementById("quiz-container").innerHTML = "<p>Не удалось загрузить вопросы.</p>";
     }
+}
 
+function showQuestion() {
     document.getElementById("question").textContent = questions[currentQuestion].question;
     document.getElementById("answer").value = "";
     document.getElementById("feedback").textContent = "";
+    document.getElementById("submit-btn").disabled = false;
 }
 
-// Функция проверки ответа
 function checkAnswer() {
-    const userAnswer = parseInt(document.getElementById("answer").value);
-    const correctAnswer = questions[currentQuestion].answer;
+    const answerInput = document.getElementById("answer");
+    const submitBtn = document.getElementById("submit-btn");
+
+    let userAnswer = parseInt(answerInput.value);
+    let correctAnswer = questions[currentQuestion].answer;
+
+    submitBtn.disabled = true;
 
     if (userAnswer === correctAnswer) {
         score++;
@@ -32,31 +36,17 @@ function checkAnswer() {
         document.getElementById("feedback").textContent = `Ошибка. Правильный ответ: ${correctAnswer}`;
     }
 
+    document.getElementById("score").textContent = `Ваш счет: ${score}`;
     currentQuestion++;
 
     if (currentQuestion < questions.length) {
-        setTimeout(showQuestion, 1); // Показ следующего вопроса через секунду
+        setTimeout(showQuestion, 1000);
     } else {
-        document.getElementById("quiz-container").innerHTML = `<h2>Вы набрали ${score} из ${questions.length}</h2>`;
-    }
-
-    document.getElementById("score").textContent = `Ваш счет: ${score}`;
-}
-
-// Загрузка вопросов из JSON-файла
-async function loadQuestions(filePath) {
-    try {
-        const response = await fetch(filePath);
-        if (!response.ok) throw new Error(`Не удалось получить данные: ${response.status}`);
-
-        questions = await response.json();
-        console.log('Вопросы успешно загружены:', questions);
-        showQuestion(); // Отображаем первый вопрос после успешной загрузки
-    } catch (error) {
-        console.error('Ошибка при загрузке вопросов:', error.message);
-        alert('Произошла ошибка при загрузке вопросов.');
+        setTimeout(() => {
+            document.getElementById("quiz-container").innerHTML = `<h2>Вы набрали ${score} из ${questions.length}</h2>`;
+        }, 1000);
     }
 }
 
-// Вызываем функцию загрузки вопросов сразу после загрузки страницы
-loadQuestions('questions.json');
+// Загружаем вопросы при старте
+loadQuestions();
